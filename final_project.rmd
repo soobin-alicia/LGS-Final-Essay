@@ -1,0 +1,811 @@
+---
+title: "Untitled"
+author: "Soobin Choi"
+date: "2022-11-14"
+output: 
+  github_document: 
+    toc: TRUE
+---
+
+```{r setup, message=FALSE}
+knitr::opts_chunk$set(echo=TRUE, include=TRUE, comment="")
+library(tidyverse)
+library(tidytext)
+library(dplyr)
+library(stopwords)
+
+```
+
+## Bro/bruh sentence
+
+```{r}
+raw <- read_csv("final_raw.csv")
+head(raw, 10)
+raw2 <- raw %>% 
+  select(`ADDR-GENDER`:`RESP-GENDER`, AGE, `RESP-ID`:`AT-USE-GENERAL`) 
+
+raw %>% 
+  filter(TERM %in% c('BRO', 'BRUH', 'DUDE')) %>% 
+  group_by(TERM, `ADDR-RANK`) %>% 
+  na.omit() %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>% 
+  filter(`ADDR-RANK` == 'Stranger')
+
+raw %>% 
+  na.omit(FREQUENCY) %>% 
+  filter(`ADDR-RANK` == 'Stranger') %>% 
+  group_by(FREQUENCY) %>%
+  summarize(num = n_distinct(`RESP-ID`))
+
+```
+
+```{r}
+raw_sent <- read_csv("final_ranksents.csv")
+
+brobruh <- read_csv("BroBruh.csv")
+
+raw_sent_cln <- brobruh %>% 
+  select(GENDER, `RESP-ID`) %>% 
+  left_join(raw_sent, ., by = "RESP-ID") %>% 
+  relocate(GENDER, .after = "RESP-ID") %>% 
+  na.omit(GENDER) 
+
+raw_sent_cln %>% 
+  filter(GENDER %in% c('Feminine', 'Masculine', 'Non-binary')) %>% 
+  group_by(GENDER) %>% 
+  summarize(mutate(across(.cols = everything(), ~ mean(.x, na.rm = TRUE))))
+# dude / bro comparison in speech events
+
+
+#raw_sent %>% 
+#  select(ends_with('dude'), ends_with('_bro'), `RESP-ID`) %>% 
+#  mutate(AT = c('dude')) %>% 
+#  relocate(AT, `RESP-ID`, .before = music_dude) %>% 
+#  rename(remove(ends_with('_dude')))
+  
+# data wrangling
+
+raw_sent_cln %>% 
+  select(-`RESP-ID`, -GENDER) %>% 
+  select(ends_with("_dude"))
+```
+
+
+## Compare dude/bro based on gender identity (total AT)
+
+```{r}
+
+raw %>% 
+  select(`ADDR-GENDER`, TERM, `RESP-GENDER`, `ADDR-RANK`, AGE, `RESP-ID`) %>% 
+  filter(TERM == "DUDE", `RESP-GENDER` %in% c("Feminine", "Masculine"),
+         `ADDR-RANK` == "Sibling") %>%  
+  ggplot(aes(x = `ADDR-GENDER`, fill = `RESP-GENDER`)) + 
+  geom_bar(position = "dodge")
+  
+raw %>% 
+  select(`ADDR-GENDER`, `RESP-GENDER`, TERM, `ADDR-RANK`, AGE, `RESP-ID`) %>% 
+  filter(TERM == "BRO", `RESP-GENDER` %in% c("Feminine", "Masculine"),
+         `ADDR-RANK` == "Sibling") %>% 
+  ggplot(aes(x = `ADDR-GENDER`, fill = `RESP-GENDER`)) + 
+  geom_bar(position = "dodge")
+  
+# 1
+raw %>% 
+  na.omit(FREQUENCY) %>% 
+  filter(TERM %in% c("BRO", "DUDE"),
+         `RESP-GENDER` %in% c("Masculine", "Feminine")) %>% 
+  group_by(`ADDR-GENDER`, `RESP-GENDER`, `ADDR-RANK`, TERM) %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>% 
+  ggplot(aes(x = `ADDR-RANK`, y = mean_freq, group = TERM, color = TERM)) +
+  facet_grid(`ADDR-GENDER` ~ `RESP-GENDER`, labeller = labeller(
+               `ADDR-GENDER` = c(`Feminine`="Addr_F", `Masculine`="Addr_M"),
+               `RESP-GENDER` = c(`Feminine`="Resp_F", `Masculine`="Resp_M"))) + 
+  geom_line() +
+  geom_point() + 
+  scale_y_continuous(limits = c(0, 4)) +
+  labs(title = "Compare dude/bro based on interlocutors' gender", x = 'address term')
+
+# 2
+raw %>% 
+  na.omit(FREQUENCY) %>% 
+  filter(TERM %in% c("BRO", "DUDE"),
+         `RESP-GENDER` %in% c("Masculine", "Feminine")) %>% 
+  group_by(`ADDR-GENDER`, `ADDR-RANK`, TERM) %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>% 
+  ggplot(aes(x = `ADDR-RANK`, y = mean_freq, group = TERM, color = TERM)) +
+  facet_grid(vars(`ADDR-GENDER`), labeller = labeller(
+               `ADDR-GENDER` = c(`Feminine`="Addr_F", `Masculine`="Addr_M"))) + 
+  geom_line() +
+  geom_point() + 
+  scale_y_continuous(limits = c(0, 3)) +
+  labs(title = "Compare dude/bro based on gender identity", x = 'Relationship')
+
+raw %>% 
+  na.omit(FREQUENCY) %>% 
+  filter(TERM %in% c("BRO", "DUDE"),
+         `RESP-GENDER` %in% c("Masculine", "Feminine")) %>% 
+  group_by(`RESP-GENDER`, `ADDR-RANK`, TERM) %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>% 
+  ggplot(aes(x = `ADDR-RANK`, y = mean_freq, group = TERM, color = TERM)) +
+  facet_grid(vars(`RESP-GENDER`), labeller = labeller(
+               `RESP-GENDER` = c(`Feminine`="Resp_F", `Masculine`="Resp_M"))) + 
+  geom_line() +
+  geom_point() + 
+  scale_y_continuous(limits = c(0, 3.2)) +
+  labs(title = "Compare dude/bro based on gender identity", x = 'Relationship')
+
+```
+
+## Compare dude/bro/bruh based on interlocutors' gender 
+
+```{r}
+raw
+colnames(raw)
+raw %>% 
+  na.omit(FREQUENCY) %>% 
+  select(-`AT-USE-GENERAL`) %>% 
+  filter(`RESP-GENDER` %in% c("Feminine", "Masculine"), 
+         `ADDR-RANK` %in% c("Acquaintance", "Friend", "Partner", "Sibling"),
+         TERM %in% c("BRO", "DUDE", "BRUH")) %>% 
+  group_by(`ADDR-RANK`, TERM, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>% 
+#  filter(mean_freq>=2) %>% 
+  ggplot(aes(x = `ADDR-RANK`, y = mean_freq,  group = TERM, col = TERM)) +
+  facet_grid(`ADDR-GENDER` ~ `RESP-GENDER`, labeller = labeller(
+               `ADDR-GENDER` = c(`Feminine`="Addr_F", `Masculine`="Addr_M"),
+               `RESP-GENDER` = c(`Feminine`="Resp_F", `Masculine`="Resp_M"))) + 
+  geom_line() +
+  geom_point() + 
+  scale_y_continuous(limits = c(0, 4)) +
+  labs(title = "Compare dude/bro/bruh based on interlocutors' gender", x = 'Relationship')
+
+
+# Compare all ATs based on interlocutors' gender
+
+raw %>% 
+  na.omit(FREQUENCY) %>% 
+  select(-`AT-USE-GENERAL`) %>% 
+  filter(`RESP-GENDER` %in% c("Feminine", "Masculine")) %>% 
+  group_by(`ADDR-RANK`, TERM, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>% 
+#  filter(mean_freq>=2) %>% 
+  ggplot(aes(x = `ADDR-RANK`, y = mean_freq,  group = TERM, col = TERM)) +
+  facet_wrap(`ADDR-GENDER` ~ `RESP-GENDER`, ncol = 1, strip.position = c("right"), labeller = labeller(
+               `ADDR-GENDER` = c(`Feminine`="Addr_F", `Masculine`="Addr_M"),
+               `RESP-GENDER` = c(`Feminine`="Resp_F", `Masculine`="Resp_M"))) + 
+  geom_line() +
+  geom_point() + 
+  scale_y_continuous(limits = c(0, 4)) +
+  labs(title = "Compare all ATs based on interlocutors' gender", x = 'Relationship')
+
+# compare dude/bro/bruh/girl만.
+
+raw %>% 
+  na.omit(FREQUENCY) %>% 
+  select(-`AT-USE-GENERAL`) %>% 
+  filter(`RESP-GENDER` %in% c("Feminine", "Masculine"),
+         TERM %in% c("DUDE", "BRO", "GIRL", "BRUH")) %>% 
+  group_by(`ADDR-RANK`, TERM, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>% 
+#  filter(mean_freq>=2) %>% 
+  ggplot(aes(x = `ADDR-RANK`, y = mean_freq,  group = TERM, col = TERM)) +
+  facet_wrap(`ADDR-GENDER` ~ `RESP-GENDER`, ncol = 1, strip.position = c("right"), labeller = labeller(
+               `ADDR-GENDER` = c(`Feminine`="Addr_F", `Masculine`="Addr_M"),
+               `RESP-GENDER` = c(`Feminine`="Resp_F", `Masculine`="Resp_M"))) + 
+  geom_line() +
+  geom_point() + 
+  scale_y_continuous(limits = c(0, 4)) +
+  labs(title = "Compare all ATs based on interlocutors' gender", x = 'Relationship')
+
+# Compare dude/bro based on interlocutors' gender
+raw %>% 
+  na.omit(FREQUENCY) %>% 
+  select(-`AT-USE-GENERAL`) %>% 
+  filter(`RESP-GENDER` %in% c("Feminine", "Masculine"),
+         TERM %in% c("DUDE", "BRO")) %>% 
+  group_by(`ADDR-RANK`, TERM, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>% 
+#  filter(mean_freq>=2) %>% 
+  ggplot(aes(x = `ADDR-RANK`, y = mean_freq,  group = TERM, col = TERM)) +
+  facet_wrap(`RESP-GENDER` ~ `ADDR-GENDER`, ncol = 1, strip.position = c("right"), labeller = labeller(
+               `ADDR-GENDER` = c(`Feminine`="Addr_F", `Masculine`="Addr_M"),
+               `RESP-GENDER` = c(`Feminine`="Resp_F", `Masculine`="Resp_M"))) + 
+  geom_line() +
+  geom_point() + 
+  scale_y_continuous(limits = c(0, 3.5)) +
+  labs(title = "Compare dude/bro based on interlocutors' gender", x = 'Relationship')
+
+# 담화자 젠더별 mean freq
+
+raw %>% 
+  na.omit(FREQUENCY) %>% 
+  select(-`AT-USE-GENERAL`) %>% 
+  filter(`RESP-GENDER` %in% c("Feminine", "Masculine"),
+        `ADDR-RANK` == "Partner",
+        TERM == "DUDE") %>% 
+  group_by(`ADDR-RANK`, TERM, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>% 
+  unite(Gender, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+  ggplot(aes(x = Gender, y = mean_freq, fill = Gender)) +
+  geom_bar(stat = "identity")
+  
+raw %>% 
+  na.omit(FREQUENCY) %>% 
+  group_by(`ADDR-RANK`) %>% 
+  summarise(mean_total = mean(FREQUENCY))
+
+unique(raw$`ADDR-RANK`)
+
+```
+
+
+```{r}
+# 네 개 라인 한번에
+raw %>% 
+  na.omit(FREQUENCY) %>% 
+  select(-`AT-USE-GENERAL`) %>% 
+  filter(`RESP-GENDER` %in% c("Feminine", "Masculine"),
+         TERM %in% c("DUDE")) %>% 
+  group_by(`ADDR-RANK`, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>% 
+  unite(Gender, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+#  filter(mean_freq>=2) %>% 
+  ggplot(aes(x = `ADDR-RANK`, y = mean_freq,  group = Gender, col = Gender)) +
+  geom_line() +
+  geom_point() + 
+  labs(title = "DUDE")
+
+raw %>% 
+  na.omit(FREQUENCY) %>% 
+  select(-`AT-USE-GENERAL`) %>% 
+  filter(`RESP-GENDER` %in% c("Feminine", "Masculine"),
+         TERM %in% c("BRO")) %>% 
+  group_by(`ADDR-RANK`, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>% 
+  unite(Gender, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+#  filter(mean_freq>=2) %>% 
+  ggplot(aes(x = `ADDR-RANK`, y = mean_freq,  group = Gender, col = Gender)) +
+  geom_line() +
+  geom_point() + 
+  labs(title = "BRO")
+
+#########################################################################
+
+
+raw %>% 
+  na.omit(FREQUENCY) %>% 
+  select(-`AT-USE-GENERAL`) %>% 
+  filter(`RESP-GENDER` %in% c("Feminine", "Masculine"),
+         TERM %in% c("DUDE")) %>% 
+  group_by(`ADDR-RANK`, `RESP-GENDER`) %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>% 
+  ggplot(aes(x = `ADDR-RANK`, y = mean_freq,  group = `RESP-GENDER`, col = `RESP-GENDER`)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "DUDE")
+raw %>% 
+  na.omit(FREQUENCY) %>% 
+  select(-`AT-USE-GENERAL`) %>% 
+  filter(`RESP-GENDER` %in% c("Feminine", "Masculine"),
+         TERM %in% c("BRO")) %>% 
+  group_by(`ADDR-RANK`, `RESP-GENDER`) %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>% 
+  ggplot(aes(x = `ADDR-RANK`, y = mean_freq,  group = `RESP-GENDER`, col = `RESP-GENDER`)) +
+  geom_line() +
+  geom_point()
+
+```
+
+# Compare only 'dude'. (all relationship)
+
+```{r}
+raw %>% 
+  na.omit(FREQUENCY) %>% 
+  select(-`AT-USE-GENERAL`) %>% 
+  filter(`RESP-GENDER` %in% c("Masculine", "Feminine"),
+         TERM %in% c("DUDE")) %>% 
+  group_by(`ADDR-RANK`, TERM, `RESP-GENDER`, `ADDR-GENDER`) %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>% 
+#  filter(mean_freq>=2) %>% 
+  ggplot(aes(x = `ADDR-RANK`, y = mean_freq,  group = TERM)) +
+  facet_wrap(`RESP-GENDER`~`ADDR-GENDER`, ncol = 1, strip.position = c("right"), 
+             labeller = labeller(
+             `RESP-GENDER` = c(`Feminine`="Resp_F", `Masculine`="Resp_M"),
+             `ADDR-GENDER` = c(`Feminine`="Addr_F", `Masculine`="Addr_M"))) + 
+  geom_line() +
+  geom_point() + 
+  scale_y_continuous(limits = c(0, 3.5)) +
+  labs(title = "Compare dude based on interlocutors' gender", x = 'Relationship')
+```
+
+```{r}
+raw %>% 
+  na.omit(FREQUENCY) %>% 
+  select(-`AT-USE-GENERAL`) %>% 
+  filter(`RESP-GENDER` %in% c("Masculine", "Feminine"),
+         TERM %in% c("DUDE")) %>% 
+  group_by(`RESP-GENDER`, `ADDR-GENDER`) %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>% 
+  ggplot(aes(x = `RESP-GENDER`, y = mean_freq, col = `ADDR-GENDER`, group = `ADDR-GENDER`))+
+  geom_point() + 
+  geom_path()
+```
+
+
+
+## Non-hetero's usage of dude/bro
+
+```{r}
+sexual <- brobruh %>% 
+  select(SEXRECODE, `RESP-ID`)
+
+dudebro <- raw %>% 
+  select(`RESP-ID`, `AT-USE-GENERAL`) %>% 
+  filter(`AT-USE-GENERAL` %in% c("dude", "bro")) %>% 
+  left_join(., sexual, by = "RESP-ID") %>% 
+  na.omit(SEXRECODE)
+
+
+AT <- c("bro","bruh","dude","girl","man","my dude","queen")
+
+raw %>% 
+  select(`RESP-ID`, `AT-USE-GENERAL`) %>% 
+  map(~ str_split(., ",")) %>% 
+  as_data_frame() %>% 
+  unnest(`RESP-ID`, `AT-USE-GENERAL`) %>% 
+  filter(`AT-USE-GENERAL` %in% c("dude", "bro")) %>% 
+  left_join(., sexual, by = "RESP-ID") %>% 
+  filter(SEXRECODE %in% c("Asexual", "Bi", "Gay", "Lesbian", "Pan", "Queer", "Other")) %>% 
+  group_by(SEXRECODE) %>% 
+  summarize(num = length(SEXRECODE))
+```
+
+
+```{r}
+raw %>% 
+  select(`RESP-ID`, `AT-USE-GENERAL`) %>% 
+  map(~ str_split(., ",")) %>% 
+  as_data_frame() %>% 
+  unnest(`RESP-ID`) %>% 
+  filter(`AT-USE-GENERAL` %in% c("dude", "bro")) %>% 
+  left_join(., sexual, by = "RESP-ID") %>% 
+  arrange(`RESP-ID`)
+  
+raw %>% 
+  select(`RESP-ID`, `AT-USE-GENERAL`) %>%
+  mutate(dude = grepl("dude", `AT-USE-GENERAL`),
+          bro = grepl("bro",  `AT-USE-GENERAL`)) %>% 
+  left_join(., sexual, by = "RESP-ID") %>% 
+  filter(SEXRECODE %in% c("Asexual", "Bi", "Gay", "Lesbian", "Pan", "Queer", "Other")) %>% 
+  group_by(SEXRECODE) %>% 
+  summarize(num = length(SEXRECODE))
+
+
+
+dude <- raw %>% 
+  filter(`ADDR-RANK` == "Parent", TERM == "BRO", `ADDR-GENDER` == "Feminine") %>% 
+  select(`RESP-ID`, `AT-USE-GENERAL`) %>%
+  mutate(AT = grepl("dude", `AT-USE-GENERAL`)) %>% 
+  left_join(., sexual, by = "RESP-ID")
+
+bro <- raw %>% 
+  filter(`ADDR-RANK` == "Parent", TERM == "BRO", `ADDR-GENDER` == "Feminine") %>% 
+  select(`RESP-ID`, `AT-USE-GENERAL`) %>%
+  mutate(AT = grepl("bro", `AT-USE-GENERAL`)) %>% 
+  left_join(., sexual, by = "RESP-ID")
+
+
+brodude <- dude %>% 
+  select(AT, `RESP-ID`) %>% 
+  mutate(AT_dude = AT) %>% 
+  left_join(., bro %>%   mutate(AT_bro = AT), by = "RESP-ID") %>% 
+  select(-AT.x, -AT.y) %>% 
+  relocate(AT_dude, .before = "AT_bro")
+
+# dude/bro usage based on sexuality
+
+dude_use <- brodude %>% 
+  map(~ str_replace_all(., "(Asexual|Bi|Gay|Lesbian|Pan|Queer|Other)", "non_Het")) %>% 
+  as_data_frame() %>% 
+  na.omit(SEXRECODE) %>% 
+  mutate_all(funs(str_replace(., "FALSE", "NO USE"))) %>% 
+  mutate_all(funs(str_replace(., "TRUE", "USE"))) %>% 
+  group_by(SEXRECODE, AT_dude) %>% 
+  summarize(Count = n()) %>%
+  ggplot(aes(x = SEXRECODE, y = Count, fill = AT_dude)) + 
+  geom_col(position = "dodge") + 
+  labs(title = "dude usage based on sexuality", x = "Sexuality")
+
+bro_use <- brodude %>% 
+  map(~ str_replace_all(., "(Asexual|Bi|Gay|Lesbian|Pan|Queer|Other)", "non_Het")) %>% 
+  as_data_frame() %>% 
+  na.omit(SEXRECODE) %>% 
+  mutate_all(funs(str_replace(., "FALSE", "NO USE"))) %>% 
+  mutate_all(funs(str_replace(., "TRUE", "USE"))) %>% 
+  group_by(SEXRECODE, AT_bro) %>% 
+  summarize(Count = n()) %>%
+  ggplot(aes(x = SEXRECODE, y = Count, fill = AT_bro)) + 
+  geom_col(position = "dodge") + 
+  scale_y_continuous(limits = c(0,80)) + 
+  labs(title = "bro usage based on sexuality", x = "Sexuality")
+```
+
+
+```{r}
+dude_use
+bro_use
+```
+
+# Sexuality dude/bro
+
+```{r}
+sexual
+raw %>% 
+  left_join(., sexual, by = "RESP-ID") %>% 
+  map(~ str_replace_all(., "(Asexual|Bi|Gay|Lesbian|Pan|Queer|Other)", "non_Het")) %>% 
+  as_data_frame() %>% 
+  na.omit(SEXRECODE) %>% 
+  na.omit(FREQUENCY) %>% 
+  select(-`AT-USE-GENERAL`) %>% 
+  filter(`RESP-GENDER` %in% c("Feminine", "Masculine"),
+         TERM %in% c("DUDE")) %>% 
+  mutate(FREQUENCY = as.numeric(FREQUENCY)) %>% 
+  group_by(`ADDR-RANK`, SEXRECODE) %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>% 
+  ggplot(aes(x = `ADDR-RANK`, y = mean_freq,  group = SEXRECODE, col = SEXRECODE)) +
+  geom_line() +
+  geom_point() + 
+  labs(title = "sexuality")
+
+
+```
+
+
+
+
+
+
+
+
+
+# 응답자 젠더에 따른 dude/bro사용 그래프
+
+
+```{r}
+# 응답자의 젠더에 따른 dude 사용 (수치)
+
+raw %>% 
+  filter(`ADDR-RANK` == "Parent", TERM == "BRO", `ADDR-GENDER` == "Feminine",
+         `RESP-GENDER` %in% c("Masculine", "Feminine", "Non-binary")) %>% 
+  select(`RESP-ID`, `AT-USE-GENERAL`, `RESP-GENDER`) %>%
+  mutate(AT = grepl("dude", `AT-USE-GENERAL`)) %>% 
+  mutate_all(funs(str_replace(., "FALSE", "NO USE"))) %>% 
+  mutate_all(funs(str_replace(., "TRUE", "USE"))) %>% 
+  group_by(`RESP-GENDER`, AT) %>% 
+  summarize(Count = n())
+
+
+# 응답자의 젠더에 따른 dude 사용 (그래프)
+
+raw %>% 
+  filter(`ADDR-RANK` == "Parent", TERM == "BRO", `ADDR-GENDER` == "Feminine",
+         `RESP-GENDER` %in% c("Masculine", "Feminine", "Non-binary")) %>% 
+  select(`RESP-ID`, `AT-USE-GENERAL`, `RESP-GENDER`) %>%
+  mutate(AT = grepl("dude", `AT-USE-GENERAL`)) %>% 
+  mutate_all(funs(str_replace(., "FALSE", "NO USE"))) %>% 
+  mutate_all(funs(str_replace(., "TRUE", "USE"))) %>% 
+  group_by(`RESP-GENDER`, AT) %>% 
+  summarize(Count = n()) %>%
+  ggplot(aes(x = `RESP-GENDER`, y = Count, fill = AT)) + 
+  geom_col(position = "dodge") + 
+#  scale_y_continuous(limits = c(0,80)) + 
+  labs(title = "dude usage based on sexuality", x = "Gender Identity")
+
+# 응답자의 젠더에 따른 bro 사용 (그래프)
+
+raw %>% 
+  filter(`ADDR-RANK` == "Parent", TERM == "BRO", `ADDR-GENDER` == "Feminine",
+         `RESP-GENDER` %in% c("Masculine", "Feminine", "Non-binary")) %>% 
+  select(`RESP-ID`, `AT-USE-GENERAL`, `RESP-GENDER`) %>%
+  mutate(AT = grepl("bro", `AT-USE-GENERAL`)) %>% 
+  mutate_all(funs(str_replace(., "FALSE", "NO USE"))) %>% 
+  mutate_all(funs(str_replace(., "TRUE", "USE"))) %>% 
+  group_by(`RESP-GENDER`, AT) %>% 
+  summarize(Count = n()) %>%
+  ggplot(aes(x = `RESP-GENDER`, y = Count, fill = AT)) + 
+  geom_col(position = "dodge") + 
+#  scale_y_continuous(limits = c(0,80)) + 
+  labs(title = "bro usage based on sexuality", x = "Gender Identity")
+
+
+# 각 젠더별 응답자 수
+
+raw %>% 
+  filter(`ADDR-RANK` == "Parent", TERM == "BRO", `ADDR-GENDER` == "Feminine") %>% 
+  group_by(`RESP-GENDER`) %>% 
+  summarize(count = length(TERM))
+
+```
+
+
+
+
+
+
+# AT depending on sexuality
+
+```{r}
+
+#raw %>% 
+#  select()
+#  map(~ str_replace_all(., "(Asexual|Bi|Gay|Lesbian|Pan|Queer|Other)", "non_Het")) 
+  
+  
+raw %>% 
+  select(`RESP-ID`, `AT-USE-GENERAL`) %>%
+  mutate(dude = grepl("dude", `AT-USE-GENERAL`),
+          bro = grepl("bro",  `AT-USE-GENERAL`)) %>% 
+  left_join(., sexual, by = "RESP-ID") %>% 
+  na.omit(SEXRECODE) %>% 
+  map(~ str_replace_all(., "(Asexual|Bi|Gay|Lesbian|Pan|Queer|Other)", "non_Het")) %>% 
+  as_data_frame()
+  
+
+raw_sexual <- raw %>% 
+  left_join(., sexual, by = "RESP-ID") %>% 
+  relocate(SEXRECODE, .after = `RESP-ID`)
+
+# 성지향성에 따른 AT 사용현황
+
+raw_sexual %>% 
+  na.omit(FREQUENCY) %>% 
+  select(-`AT-USE-GENERAL`) %>% 
+  na.omit(SEXRECODE) %>% 
+  map_dfr(~ str_replace_all(., "(Asexual|Bi|Gay|Lesbian|Pan|Queer|Other)", "non_Het")) %>% 
+  mutate(FREQUENCY = as.numeric(FREQUENCY)) %>% 
+  group_by(`ADDR-RANK`, TERM, SEXRECODE) %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>%
+  ggplot(aes(x = `ADDR-RANK`, y = mean_freq, group = TERM, col = TERM)) +
+  facet_grid(vars(SEXRECODE)) +
+  geom_line() + 
+  geom_point() +
+  labs(title = "Compare all ATs based on interlocutors' sexuality", x = 'Relationship')
+
+# 성지향성에 따른 dude/bro 사용현황
+
+raw_sexual %>% 
+  na.omit(FREQUENCY) %>% 
+  select(-`AT-USE-GENERAL`) %>% 
+  na.omit(SEXRECODE) %>% 
+  map_dfr(~ str_replace_all(., "(Asexual|Bi|Gay|Lesbian|Pan|Queer|Other)", "non_Het")) %>% 
+  mutate(FREQUENCY = as.numeric(FREQUENCY)) %>% 
+  filter(TERM %in% c("DUDE", "BRO")) %>% 
+  group_by(`ADDR-RANK`, TERM, SEXRECODE) %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>%
+  ggplot(aes(x = `ADDR-RANK`, y = mean_freq, group = TERM, col = TERM)) +
+  facet_grid(vars(SEXRECODE)) +
+  geom_line() + 
+  geom_point() +
+  labs(title = "Compare dude/bro based on interlocutors' sexuality", x = 'Relationship')
+
+# non-hetero들의 girl 사용현황
+
+raw_sexual %>% 
+  na.omit(FREQUENCY) %>% 
+  select(-`AT-USE-GENERAL`) %>% 
+  na.omit(SEXRECODE) %>% 
+  map_dfr(~ str_replace_all(., "(Asexual|Bi|Gay|Lesbian|Pan|Queer|Other)", "non_Het")) %>% 
+  mutate(FREQUENCY = as.numeric(FREQUENCY)) %>% 
+  filter(TERM %in% c("GIRL"), 
+         SEXRECODE == "non_Het",
+         `RESP-GENDER` %in% c("Feminine", "Masculine")) %>% 
+  group_by(`ADDR-RANK`, `ADDR-GENDER`, `RESP-GENDER`, TERM) %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>%
+  ggplot(aes(x = `ADDR-RANK`, y = mean_freq,  group = TERM, col = TERM)) +
+  facet_wrap(`RESP-GENDER`~`ADDR-GENDER`, ncol = 1, strip.position = c("right"), 
+             labeller = labeller(
+             `RESP-GENDER` = c(`Feminine`="Resp_F", `Masculine`="Resp_M"),
+             `ADDR-GENDER` = c(`Feminine`="Addr_F", `Masculine`="Addr_M"))) + 
+  geom_line() +
+  geom_point() + 
+  scale_y_continuous(limits = c(0, 3.5)) +
+  labs(title = "Non-Heteros' usage of girl")
+```
+
+# Non-hetero's other AT usage 현황
+
+```{r}
+
+# graph
+
+raw_sexual %>% 
+  na.omit(FREQUENCY) %>% 
+  select(-`AT-USE-GENERAL`) %>% 
+  na.omit(SEXRECODE) %>% 
+  map_dfr(~ str_replace_all(., "(Asexual|Bi|Gay|Lesbian|Pan|Queer|Other)", "non_Het")) %>% 
+  mutate(FREQUENCY = as.numeric(FREQUENCY)) %>% 
+  filter(TERM %in% c("GIRL", "MAN", "QUEEN", "MYDUDE")) %>% 
+  group_by(`ADDR-RANK`, TERM, SEXRECODE) %>% 
+  summarize(mean_freq = mean(FREQUENCY)) %>%
+  ggplot(aes(x = `ADDR-RANK`, y = mean_freq, group = TERM, col = TERM)) +
+  facet_grid(vars(SEXRECODE)) +
+  geom_line() + 
+  geom_point() +
+  labs(title = "Compare other ATs based on interlocutors' sexuality", x = 'Relationship')
+
+raw_sexual %>% 
+  select(SEXRECODE) %>% 
+  unique()
+
+```
+
+
+
+
+# Part 3. 문장 순서 배열.
+
+```{r}
+sent_clean <- brobruh  %>% 
+  rename(Sent = `BRO-V-BRUH`) %>% 
+  select(GENDER, SEXRECODE, Sent) %>% 
+  na.omit(SEXRECODE) 
+
+snowball <- stopwords(language = "en", source = "snowball", simplify = TRUE)
+nltk <- stopwords(language = "en", source = "nltk", simplify = TRUE)
+smart <- stopwords(language = "en", source = "smart", simplify = TRUE)
+
+# removing stop words
+
+sent_clean %>% 
+  select(GENDER, Sent) %>% 
+  unnest_tokens(word, Sent) %>% 
+  filter(!(word %in% snowball | word %in% nltk | word %in% smart)) %>% 
+  filter(!(word %in% c("you're", "bruh", "bro", "that's")))
+
+sent_clean %>% 
+  select(GENDER, Sent) %>% 
+  unnest_tokens(token = "sentences", Sent, Sent) %>% 
+  mutate(bruh = grepl("bruh", Sent),
+          bro = grepl("bro",  Sent))
+
+# bro와 bruh가 있는 문장들로 묶기
+
+bro_sent <- sent_clean %>% 
+  select(GENDER, Sent) %>% 
+  unnest_tokens(token = "sentences", Sent, Sent) %>% 
+  map(~ str_split(., ",")) %>% 
+  as_data_frame() %>% 
+  unnest(GENDER, Sent) %>% 
+  mutate(bruh = grepl("bruh", Sent),
+          bro = grepl("bro",  Sent)) %>% 
+  filter(bro == TRUE & bruh == FALSE) %>% 
+  select(-bruh)
+  
+  
+  
+bruh_sent <- sent_clean %>% 
+  select(GENDER, Sent) %>% 
+  unnest_tokens(token = "sentences", Sent, Sent) %>% 
+  map(~ str_split(., ",")) %>% 
+  as_data_frame() %>% 
+  unnest(GENDER, Sent) %>% 
+  mutate(bruh = grepl("bruh", Sent),
+          bro = grepl("bro",  Sent)) %>% 
+  filter(bruh == TRUE & bro == FALSE) %>% 
+  select(-bro)
+
+# bro bruh 둘 다 true인거
+sent_clean %>% 
+  select(GENDER, Sent) %>% 
+  unnest_tokens(token = "sentences", Sent, Sent) %>% 
+  map(~ str_split(., ",")) %>% 
+  as_data_frame() %>% 
+  unnest(GENDER, Sent) %>% 
+  mutate(bruh = grepl("bruh", Sent),
+          bro = grepl("bro",  Sent)) %>% 
+  filter(bruh == TRUE & bro == TRUE)
+
+```
+
+
+```{r}
+bro_sent
+bruh_sent
+
+bro_sent_clean <- bro_sent %>% 
+#  filter(!(GENDER %in% c("Other (please state):"))) %>% 
+  unnest_tokens(word, Sent) %>% 
+  filter(!(word %in% c("bro", "use", "used", "can", "word", "people",
+                       "person", "term", "address", "expression"))) %>% 
+  filter(!(word %in% snowball)) %>% 
+  filter(!(word %in% nltk)) %>% 
+  filter(!(word %in% smart)) %>% 
+  select(-bro)
+
+bro_sent_clean %>% 
+  select(word) %>% 
+  unique()
+
+bruh_sent_clean <- bruh_sent %>% 
+#  filter(!(GENDER %in% c("Other (please state):"))) %>% 
+  unnest_tokens(word, Sent) %>% 
+  filter(!(word %in% c("bruh", "use", "used", "can", "word", "people", 
+                       "person", "term", "address", "expression"))) %>% 
+  filter(!(word %in% snowball)) %>% 
+  filter(!(word %in% nltk)) %>% 
+  filter(!(word %in% smart)) %>% 
+  select(-bruh)
+
+
+bro_sent_clean %>% 
+  select(GENDER) %>% 
+  unique()
+
+## 이게 내가 필요한거!!
+
+
+bro_sent_clean %>%
+  count(word, sort = TRUE) %>%
+#  filter(n > 2) %>%
+  mutate(word = reorder(word, n)) %>%
+  head(20) %>% 
+  ggplot(aes(n, word)) +
+  geom_col() +
+  labs(y = NULL) +
+  labs(title = "Top 20 tokens used to describe 'bro'", x = "Count")
+
+bruh_sent_clean %>%
+  count(word, sort = TRUE) %>%
+#  filter(15> n, n > 2) %>%
+  mutate(word = reorder(word, n)) %>%
+    head(20) %>% 
+  ggplot(aes(n, word)) +
+  geom_col() +
+  labs(y = NULL)+
+  labs(title = "Top 20 tokens used to describe 'bruh'", x = "Count")
+
+# 응답자 젠더별 plot
+
+bro_sent_clean %>%
+  group_by(GENDER) %>% 
+  count(word, sort = TRUE) %>%
+  filter(n > 2) %>%
+  mutate(word = reorder(word, n)) %>% 
+  ggplot(aes(n, word)) +
+  facet_grid(vars(GENDER)) +
+  geom_col() +
+  labs(title = "Tokens used to describe 'bro'")
+
+bruh_sent_clean %>%
+  group_by(GENDER) %>% 
+  count(word, sort = TRUE) %>%
+  filter(n > 2) %>%
+  mutate(word = reorder(word, n)) %>% 
+  ggplot(aes(n, word)) +
+  facet_grid(vars(GENDER)) +
+  geom_col() +
+  labs(title = "Tokens used to describe 'bruh'")
+```
+
+
+
+# Others
+
+
+
+```{r}
+
+# gender
+
+
+raw %>% 
+  na.omit(FREQUENCY) %>% 
+  select(-`AT-USE-GENERAL`) %>% 
+  filter(`RESP-GENDER` %in% c("Feminine", "Masculine"),
+         TERM == "DUDE") %>% 
+  group_by(`RESP-GENDER`, `ADDR-GENDER`) %>% 
+  summarize(mean_freq = mean(FREQUENCY))
+```
+
+
+
