@@ -3,7 +3,7 @@ Untitled
 Soobin Choi
 2022-11-14
 
-- <a href="#brobruh-sentence" id="toc-brobruh-sentence">bro/bruh
+- <a href="#brobruh-sentence" id="toc-brobruh-sentence">Bro/bruh
   sentence</a>
 - <a href="#compare-dudebro-based-on-gender-identity-total-at"
   id="toc-compare-dudebro-based-on-gender-identity-total-at">Compare
@@ -11,12 +11,12 @@ Soobin Choi
 - <a href="#compare-dudebrobruh-based-on-interlocutors-gender"
   id="toc-compare-dudebrobruh-based-on-interlocutors-gender">Compare
   dude/bro/bruh based on interlocutors’ gender</a>
-- <a href="#dude만-비교-all-relationship"
-  id="toc-dude만-비교-all-relationship">dude만 비교. (all
+- <a href="#compare-only-dude-all-relationship"
+  id="toc-compare-only-dude-all-relationship">Compare only ‘dude’. (all
   relationship)</a>
   - <a href="#non-heteros-usage-of-dudebro"
-    id="toc-non-heteros-usage-of-dudebro">non-hetero’s usage of dude/bro</a>
-- <a href="#sexuality-dudebro" id="toc-sexuality-dudebro">sexuality
+    id="toc-non-heteros-usage-of-dudebro">Non-hetero’s usage of dude/bro</a>
+- <a href="#sexuality-dudebro" id="toc-sexuality-dudebro">Sexuality
   dude/bro</a>
 - <a href="#응답자-젠더에-따른-dudebro사용-그래프"
   id="toc-응답자-젠더에-따른-dudebro사용-그래프">응답자 젠더에 따른
@@ -24,11 +24,11 @@ Soobin Choi
 - <a href="#at-depending-on-sexuality"
   id="toc-at-depending-on-sexuality">AT depending on sexuality</a>
 - <a href="#non-heteros-other-at-usage-현황"
-  id="toc-non-heteros-other-at-usage-현황">non-hetero’s other AT usage
+  id="toc-non-heteros-other-at-usage-현황">Non-hetero’s other AT usage
   현황</a>
 - <a href="#part-3-문장-순서-배열" id="toc-part-3-문장-순서-배열">Part 3.
   문장 순서 배열.</a>
-- <a href="#others" id="toc-others">others</a>
+- <a href="#others" id="toc-others">Others</a>
 
 ``` r
 knitr::opts_chunk$set(echo=TRUE, include=TRUE, comment="")
@@ -40,10 +40,10 @@ library(stopwords)
 
     ## Warning: 패키지 'stopwords'는 R 버전 4.2.2에서 작성되었습니다
 
-## bro/bruh sentence
+## Bro/bruh sentence
 
 ``` r
-raw <- read_csv("final_raw.csv")
+raw <- read_csv("C:/Users/82102/Desktop/Data_Science/Language-Gender-Sexuality/data/final_raw.csv")
 ```
 
     Rows: 22344 Columns: 8
@@ -115,7 +115,7 @@ raw %>%
     5         4    39
 
 ``` r
-raw_sent <- read_csv("final_ranksents.csv")
+raw_sent <- read_csv("C:/Users/82102/Desktop/Data_Science/Language-Gender-Sexuality/data/final_ranksents.csv")
 ```
 
     Rows: 228 Columns: 19
@@ -128,7 +128,7 @@ raw_sent <- read_csv("final_ranksents.csv")
     ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
 ``` r
-brobruh <- read_csv("BroBruh.csv")
+brobruh <- read_csv("C:/Users/82102/Desktop/Data_Science/Language-Gender-Sexuality/data/BroBruh.csv")
 ```
 
     Rows: 228 Columns: 11
@@ -555,7 +555,7 @@ raw %>%
 
 ![](final_project_files/figure-gfm/unnamed-chunk-5-4.png)<!-- -->
 
-# dude만 비교. (all relationship)
+# Compare only ‘dude’. (all relationship)
 
 ``` r
 raw %>% 
@@ -600,7 +600,7 @@ raw %>%
 
 ![](final_project_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
-## non-hetero’s usage of dude/bro
+## Non-hetero’s usage of dude/bro
 
 ``` r
 sexual <- brobruh %>% 
@@ -778,7 +778,7 @@ bro_use
 
 ![](final_project_files/figure-gfm/unnamed-chunk-10-2.png)<!-- -->
 
-# sexuality dude/bro
+# Sexuality dude/bro
 
 ``` r
 sexual
@@ -1030,7 +1030,7 @@ raw_sexual %>%
 
 ![](final_project_files/figure-gfm/unnamed-chunk-13-3.png)<!-- -->
 
-# non-hetero’s other AT usage 현황
+# Non-hetero’s other AT usage 현황
 
 ``` r
 # graph
@@ -1354,7 +1354,7 @@ bruh_sent_clean %>%
 
 ![](final_project_files/figure-gfm/unnamed-chunk-16-4.png)<!-- -->
 
-# others
+# Others
 
 ``` r
 # gender
