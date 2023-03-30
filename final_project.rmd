@@ -19,7 +19,7 @@ library(stopwords)
 ## Bro/bruh sentence
 
 ```{r}
-raw <- read_csv("final_raw.csv")
+raw <- read_csv("C:/Users/82102/Desktop/Data_Science/Language-Gender-Sexuality/data/final_raw.csv")
 head(raw, 10)
 raw2 <- raw %>% 
   select(`ADDR-GENDER`:`RESP-GENDER`, AGE, `RESP-ID`:`AT-USE-GENERAL`) 
@@ -40,9 +40,9 @@ raw %>%
 ```
 
 ```{r}
-raw_sent <- read_csv("final_ranksents.csv")
+raw_sent <- read_csv("C:/Users/82102/Desktop/Data_Science/Language-Gender-Sexuality/data/final_ranksents.csv")
 
-brobruh <- read_csv("BroBruh.csv")
+brobruh <- read_csv("C:/Users/82102/Desktop/Data_Science/Language-Gender-Sexuality/data/BroBruh.csv")
 
 raw_sent_cln <- brobruh %>% 
   select(GENDER, `RESP-ID`) %>% 
