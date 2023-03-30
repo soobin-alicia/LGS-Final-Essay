@@ -276,7 +276,7 @@ raw %>%
 ![](final_project_files/figure-gfm/unnamed-chunk-3-4.png)<!-- -->
 
 ``` r
-raw %>% 
+a <- raw %>% 
   na.omit(FREQUENCY) %>% 
   filter(TERM %in% c("BRO", "DUDE"),
          `RESP-GENDER` %in% c("Masculine", "Feminine")) %>% 
@@ -293,6 +293,10 @@ raw %>%
 
     `summarise()` has grouped output by 'RESP-GENDER', 'ADDR-RANK'. You can
     override using the `.groups` argument.
+
+``` r
+print(a)
+```
 
 ![](final_project_files/figure-gfm/unnamed-chunk-3-5.png)<!-- -->
 
