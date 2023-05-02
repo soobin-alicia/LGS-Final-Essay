@@ -13,17 +13,19 @@ library(tidyverse)
 library(tidytext)
 library(dplyr)
 library(stopwords)
-
 ```
 
-## Bro/bruh sentence
+## Load the data 
 
 ```{r}
 raw <- read_csv("C:/Users/82102/Desktop/Data_Science/Language-Gender-Sexuality/data/final_raw.csv")
 head(raw, 10)
-raw2 <- raw %>% 
-  select(`ADDR-GENDER`:`RESP-GENDER`, AGE, `RESP-ID`:`AT-USE-GENERAL`) 
+```
 
+### ramdom checking if the data works well? 
+
+```{r}
+# mean freq of `stranger`: bro, bruh, dude
 raw %>% 
   filter(TERM %in% c('BRO', 'BRUH', 'DUDE')) %>% 
   group_by(TERM, `ADDR-RANK`) %>% 
@@ -31,13 +33,16 @@ raw %>%
   summarize(mean_freq = mean(FREQUENCY)) %>% 
   filter(`ADDR-RANK` == 'Stranger')
 
+# freq count of `stranger`
 raw %>% 
   na.omit(FREQUENCY) %>% 
   filter(`ADDR-RANK` == 'Stranger') %>% 
   group_by(FREQUENCY) %>%
   summarize(num = n_distinct(`RESP-ID`))
-
 ```
+
+## Bro/bruh sentence
+
 
 ```{r}
 raw_sent <- read_csv("C:/Users/82102/Desktop/Data_Science/Language-Gender-Sexuality/data/final_ranksents.csv")
@@ -54,15 +59,15 @@ raw_sent_cln %>%
   filter(GENDER %in% c('Feminine', 'Masculine', 'Non-binary')) %>% 
   group_by(GENDER) %>% 
   summarize(mutate(across(.cols = everything(), ~ mean(.x, na.rm = TRUE))))
+
 # dude / bro comparison in speech events
 
 
-#raw_sent %>% 
-#  select(ends_with('dude'), ends_with('_bro'), `RESP-ID`) %>% 
-#  mutate(AT = c('dude')) %>% 
-#  relocate(AT, `RESP-ID`, .before = music_dude) %>% 
-#  rename(remove(ends_with('_dude')))
-  
+raw_sent %>% 
+  select(ends_with('dude'), ends_with('_bro'), `RESP-ID`) %>% 
+  mutate(AT = c('dude')) %>% 
+  relocate(AT, `RESP-ID`, .before = music_dude)
+
 # data wrangling
 
 raw_sent_cln %>% 
@@ -78,16 +83,18 @@ raw_sent_cln %>%
 raw %>% 
   select(`ADDR-GENDER`, TERM, `RESP-GENDER`, `ADDR-RANK`, AGE, `RESP-ID`) %>% 
   filter(TERM == "DUDE", `RESP-GENDER` %in% c("Feminine", "Masculine"),
-         `ADDR-RANK` == "Sibling") %>%  
+         `ADDR-RANK` == "Sibling") %>% 
   ggplot(aes(x = `ADDR-GENDER`, fill = `RESP-GENDER`)) + 
-  geom_bar(position = "dodge")
+  geom_bar(position = "dodge") +
+  labs(title = "DUDE to sibling")
   
 raw %>% 
   select(`ADDR-GENDER`, `RESP-GENDER`, TERM, `ADDR-RANK`, AGE, `RESP-ID`) %>% 
   filter(TERM == "BRO", `RESP-GENDER` %in% c("Feminine", "Masculine"),
          `ADDR-RANK` == "Sibling") %>% 
   ggplot(aes(x = `ADDR-GENDER`, fill = `RESP-GENDER`)) + 
-  geom_bar(position = "dodge")
+  geom_bar(position = "dodge") +
+  labs(title = "BRO to siblings")
   
 # 1
 raw %>% 
@@ -139,8 +146,7 @@ raw %>%
 ## Compare dude/bro/bruh based on interlocutors' gender 
 
 ```{r}
-raw
-colnames(raw)
+
 raw %>% 
   na.omit(FREQUENCY) %>% 
   select(-`AT-USE-GENERAL`) %>% 
@@ -215,7 +221,7 @@ raw %>%
   scale_y_continuous(limits = c(0, 3.5)) +
   labs(title = "Compare dude/bro based on interlocutors' gender", x = 'Relationship')
 
-# 담화자 젠더별 mean freq
+# mean freq by respondents` gender
 
 raw %>% 
   na.omit(FREQUENCY) %>% 
@@ -234,13 +240,14 @@ raw %>%
   group_by(`ADDR-RANK`) %>% 
   summarise(mean_total = mean(FREQUENCY))
 
-unique(raw$`ADDR-RANK`)
+raw
 
 ```
 
 
 ```{r}
-# 네 개 라인 한번에
+# Four lines at once
+
 raw %>% 
   na.omit(FREQUENCY) %>% 
   select(-`AT-USE-GENERAL`) %>% 
@@ -283,6 +290,7 @@ raw %>%
   geom_line() +
   geom_point() +
   labs(title = "DUDE")
+
 raw %>% 
   na.omit(FREQUENCY) %>% 
   select(-`AT-USE-GENERAL`) %>% 
@@ -292,7 +300,8 @@ raw %>%
   summarize(mean_freq = mean(FREQUENCY)) %>% 
   ggplot(aes(x = `ADDR-RANK`, y = mean_freq,  group = `RESP-GENDER`, col = `RESP-GENDER`)) +
   geom_line() +
-  geom_point()
+  geom_point() +
+  labs(title = "BRO")
 
 ```
 
@@ -362,6 +371,7 @@ raw %>%
 
 
 ```{r}
+  
 raw %>% 
   select(`RESP-ID`, `AT-USE-GENERAL`) %>% 
   map(~ str_split(., ",")) %>% 
@@ -370,58 +380,70 @@ raw %>%
   filter(`AT-USE-GENERAL` %in% c("dude", "bro")) %>% 
   left_join(., sexual, by = "RESP-ID") %>% 
   arrange(`RESP-ID`)
-  
-raw %>% 
+
+
+# dude/bro의 사용여부 - incorporating sexuality information
+
+semi_clean <- raw %>% 
   select(`RESP-ID`, `AT-USE-GENERAL`) %>%
   mutate(dude = grepl("dude", `AT-USE-GENERAL`),
           bro = grepl("bro",  `AT-USE-GENERAL`)) %>% 
   left_join(., sexual, by = "RESP-ID") %>% 
-  filter(SEXRECODE %in% c("Asexual", "Bi", "Gay", "Lesbian", "Pan", "Queer", "Other")) %>% 
-  group_by(SEXRECODE) %>% 
-  summarize(num = length(SEXRECODE))
+  filter(SEXRECODE %in% c("Asexual", "Bi", "Gay", "Lesbian", "Pan", "Queer", "Other"))
 
+```
 
-
+```{r}
+# dude 사용 여부 - boolean
 dude <- raw %>% 
   filter(`ADDR-RANK` == "Parent", TERM == "BRO", `ADDR-GENDER` == "Feminine") %>% 
   select(`RESP-ID`, `AT-USE-GENERAL`) %>%
-  mutate(AT = grepl("dude", `AT-USE-GENERAL`)) %>% 
+  mutate(AT_dude = grepl("dude", `AT-USE-GENERAL`)) %>% 
   left_join(., sexual, by = "RESP-ID")
 
+# bro 사용여부 - boolean
 bro <- raw %>% 
   filter(`ADDR-RANK` == "Parent", TERM == "BRO", `ADDR-GENDER` == "Feminine") %>% 
   select(`RESP-ID`, `AT-USE-GENERAL`) %>%
-  mutate(AT = grepl("bro", `AT-USE-GENERAL`)) %>% 
+  mutate(AT_bro = grepl("bro", `AT-USE-GENERAL`)) %>% 
   left_join(., sexual, by = "RESP-ID")
 
 
 brodude <- dude %>% 
-  select(AT, `RESP-ID`) %>% 
-  mutate(AT_dude = AT) %>% 
-  left_join(., bro %>%   mutate(AT_bro = AT), by = "RESP-ID") %>% 
-  select(-AT.x, -AT.y) %>% 
+  select(AT_dude, `RESP-ID`) %>% 
+  left_join(., bro, by = "RESP-ID") %>% 
   relocate(AT_dude, .before = "AT_bro")
+```
 
+
+
+```{r}
 # dude/bro usage based on sexuality
 
-dude_use <- brodude %>% 
+brodude_clean <- brodude %>% 
+  na.omit(SEXRECODE) %>% 
   map(~ str_replace_all(., "(Asexual|Bi|Gay|Lesbian|Pan|Queer|Other)", "non_Het")) %>% 
   as_data_frame() %>% 
-  na.omit(SEXRECODE) %>% 
   mutate_all(funs(str_replace(., "FALSE", "NO USE"))) %>% 
-  mutate_all(funs(str_replace(., "TRUE", "USE"))) %>% 
+  mutate_all(funs(str_replace(., "TRUE", "USE")))
+
+# check if ready
+brodude_clean %>% 
+  group_by(SEXRECODE, AT_dude, AT_bro) %>% 
+  summarize(n = n())
+```
+
+
+```{r}
+
+dude_use <- brodude_clean %>% 
   group_by(SEXRECODE, AT_dude) %>% 
   summarize(Count = n()) %>%
   ggplot(aes(x = SEXRECODE, y = Count, fill = AT_dude)) + 
   geom_col(position = "dodge") + 
   labs(title = "dude usage based on sexuality", x = "Sexuality")
 
-bro_use <- brodude %>% 
-  map(~ str_replace_all(., "(Asexual|Bi|Gay|Lesbian|Pan|Queer|Other)", "non_Het")) %>% 
-  as_data_frame() %>% 
-  na.omit(SEXRECODE) %>% 
-  mutate_all(funs(str_replace(., "FALSE", "NO USE"))) %>% 
-  mutate_all(funs(str_replace(., "TRUE", "USE"))) %>% 
+bro_use <- brodude_clean %>% 
   group_by(SEXRECODE, AT_bro) %>% 
   summarize(Count = n()) %>%
   ggplot(aes(x = SEXRECODE, y = Count, fill = AT_bro)) + 
@@ -439,7 +461,7 @@ bro_use
 # Sexuality dude/bro
 
 ```{r}
-sexual
+
 raw %>% 
   left_join(., sexual, by = "RESP-ID") %>% 
   map(~ str_replace_all(., "(Asexual|Bi|Gay|Lesbian|Pan|Queer|Other)", "non_Het")) %>% 

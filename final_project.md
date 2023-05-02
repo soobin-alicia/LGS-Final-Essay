@@ -3,6 +3,10 @@ Untitled
 Soobin Choi
 2022-11-14
 
+- <a href="#load-the-data" id="toc-load-the-data">Load the data</a>
+  - <a href="#ramdom-checking-if-the-data-works-well"
+    id="toc-ramdom-checking-if-the-data-works-well">ramdom checking if the
+    data works well?</a>
 - <a href="#brobruh-sentence" id="toc-brobruh-sentence">Bro/bruh
   sentence</a>
 - <a href="#compare-dudebro-based-on-gender-identity-total-at"
@@ -40,7 +44,7 @@ library(stopwords)
 
     ## Warning: 패키지 'stopwords'는 R 버전 4.2.2에서 작성되었습니다
 
-## Bro/bruh sentence
+## Load the data
 
 ``` r
 raw <- read_csv("C:/Users/82102/Desktop/Data_Science/Language-Gender-Sexuality/data/final_raw.csv")
@@ -74,10 +78,10 @@ head(raw, 10)
     10 Feminine      Parent      BRO          NA Feminine      18-25 R_1pRk… bro,br…
     # … with abbreviated variable names ¹​`RESP-ID`, ²​`AT-USE-GENERAL`
 
-``` r
-raw2 <- raw %>% 
-  select(`ADDR-GENDER`:`RESP-GENDER`, AGE, `RESP-ID`:`AT-USE-GENERAL`) 
+### ramdom checking if the data works well?
 
+``` r
+# mean freq of `stranger`: bro, bruh, dude
 raw %>% 
   filter(TERM %in% c('BRO', 'BRUH', 'DUDE')) %>% 
   group_by(TERM, `ADDR-RANK`) %>% 
@@ -98,6 +102,7 @@ raw %>%
     3 DUDE  Stranger         1.18
 
 ``` r
+# freq count of `stranger`
 raw %>% 
   na.omit(FREQUENCY) %>% 
   filter(`ADDR-RANK` == 'Stranger') %>% 
@@ -113,6 +118,8 @@ raw %>%
     3         2    83
     4         3    37
     5         4    39
+
+## Bro/bruh sentence
 
 ``` r
 raw_sent <- read_csv("C:/Users/82102/Desktop/Data_Science/Language-Gender-Sexuality/data/final_ranksents.csv")
@@ -178,12 +185,31 @@ raw_sent_cln %>%
 # dude / bro comparison in speech events
 
 
-#raw_sent %>% 
-#  select(ends_with('dude'), ends_with('_bro'), `RESP-ID`) %>% 
-#  mutate(AT = c('dude')) %>% 
-#  relocate(AT, `RESP-ID`, .before = music_dude) %>% 
-#  rename(remove(ends_with('_dude')))
-  
+raw_sent %>% 
+  select(ends_with('dude'), ends_with('_bro'), `RESP-ID`) %>% 
+  mutate(AT = c('dude')) %>% 
+  relocate(AT, `RESP-ID`, .before = music_dude)
+```
+
+    # A tibble: 228 × 14
+       AT    RESP-…¹ music…² meeti…³ shut_…⁴ goodt…⁵ signa…⁶ email…⁷ music…⁸ meeti…⁹
+       <chr> <chr>     <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>
+     1 dude  R_0fhN…       1       2       2       1       1       1       2       3
+     2 dude  R_0TjJ…       2       3       1       2       1       1       4       4
+     3 dude  R_0xPZ…       4       3       4       1       4       4       3       2
+     4 dude  R_10pB…       1       1       1       2       1       1       2       2
+     5 dude  R_1244…       3       3       4       2       4       3       2       1
+     6 dude  R_12hF…       1       1       2       1       2       2       3       3
+     7 dude  R_1BWa…       2       3       2       3       1       3       1       2
+     8 dude  R_1CD3…       1       1       1       1       1       1       3       3
+     9 dude  R_1DTi…       1       2       2       2       1       2       2       1
+    10 dude  R_1eLa…       1       1       2       1       2       2       3       2
+    # … with 218 more rows, 4 more variables: shut_bro <dbl>, goodtosee_bro <dbl>,
+    #   signal_bro <dbl>, email_bro <dbl>, and abbreviated variable names
+    #   ¹​`RESP-ID`, ²​music_dude, ³​meeting_dude, ⁴​shut_dude, ⁵​goodtosee_dude,
+    #   ⁶​signal_dude, ⁷​email_dude, ⁸​music_bro, ⁹​meeting_bro
+
+``` r
 # data wrangling
 
 raw_sent_cln %>% 
@@ -212,12 +238,13 @@ raw_sent_cln %>%
 raw %>% 
   select(`ADDR-GENDER`, TERM, `RESP-GENDER`, `ADDR-RANK`, AGE, `RESP-ID`) %>% 
   filter(TERM == "DUDE", `RESP-GENDER` %in% c("Feminine", "Masculine"),
-         `ADDR-RANK` == "Sibling") %>%  
+         `ADDR-RANK` == "Sibling") %>% 
   ggplot(aes(x = `ADDR-GENDER`, fill = `RESP-GENDER`)) + 
-  geom_bar(position = "dodge")
+  geom_bar(position = "dodge") +
+  labs(title = "DUDE to sibling")
 ```
 
-![](final_project_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
 ``` r
 raw %>% 
@@ -225,10 +252,11 @@ raw %>%
   filter(TERM == "BRO", `RESP-GENDER` %in% c("Feminine", "Masculine"),
          `ADDR-RANK` == "Sibling") %>% 
   ggplot(aes(x = `ADDR-GENDER`, fill = `RESP-GENDER`)) + 
-  geom_bar(position = "dodge")
+  geom_bar(position = "dodge") +
+  labs(title = "BRO to siblings")
 ```
 
-![](final_project_files/figure-gfm/unnamed-chunk-3-2.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-4-2.png)<!-- -->
 
 ``` r
 # 1
@@ -251,7 +279,7 @@ raw %>%
     `summarise()` has grouped output by 'ADDR-GENDER', 'RESP-GENDER', 'ADDR-RANK'.
     You can override using the `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-3-3.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-4-3.png)<!-- -->
 
 ``` r
 # 2
@@ -273,10 +301,10 @@ raw %>%
     `summarise()` has grouped output by 'ADDR-GENDER', 'ADDR-RANK'. You can
     override using the `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-3-4.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-4-4.png)<!-- -->
 
 ``` r
-a <- raw %>% 
+raw %>% 
   na.omit(FREQUENCY) %>% 
   filter(TERM %in% c("BRO", "DUDE"),
          `RESP-GENDER` %in% c("Masculine", "Feminine")) %>% 
@@ -294,40 +322,9 @@ a <- raw %>%
     `summarise()` has grouped output by 'RESP-GENDER', 'ADDR-RANK'. You can
     override using the `.groups` argument.
 
-``` r
-print(a)
-```
-
-![](final_project_files/figure-gfm/unnamed-chunk-3-5.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-4-5.png)<!-- -->
 
 ## Compare dude/bro/bruh based on interlocutors’ gender
-
-``` r
-raw
-```
-
-    # A tibble: 22,344 × 8
-       `ADDR-GENDER` `ADDR-RANK` TERM  FREQUENCY `RESP-GENDER` AGE   RESP-…¹ AT-US…²
-       <chr>         <chr>       <chr>     <dbl> <chr>         <chr> <chr>   <chr>  
-     1 Feminine      Parent      BRO           2 Feminine      18-25 R_3PzQ… bro    
-     2 Feminine      Parent      BRO           0 Masculine     18-25 R_33ki… bro    
-     3 Feminine      Parent      BRO           4 Feminine      18-25 R_XjNC… bro,br…
-     4 Feminine      Parent      BRO           2 Feminine      18-25 R_3Mfm… bro,br…
-     5 Feminine      Parent      BRO           1 Feminine      18-25 R_1rpO… bro,br…
-     6 Feminine      Parent      BRO           1 Masculine     18-25 R_2799… bro,br…
-     7 Feminine      Parent      BRO           2 Feminine      18-25 R_1gFn… bro,br…
-     8 Feminine      Parent      BRO           0 Masculine     18-25 R_1LGo… bro,br…
-     9 Feminine      Parent      BRO           0 Feminine      18-25 R_3EHg… bro,br…
-    10 Feminine      Parent      BRO          NA Feminine      18-25 R_1pRk… bro,br…
-    # … with 22,334 more rows, and abbreviated variable names ¹​`RESP-ID`,
-    #   ²​`AT-USE-GENERAL`
-
-``` r
-colnames(raw)
-```
-
-    [1] "ADDR-GENDER"    "ADDR-RANK"      "TERM"           "FREQUENCY"     
-    [5] "RESP-GENDER"    "AGE"            "RESP-ID"        "AT-USE-GENERAL"
 
 ``` r
 raw %>% 
@@ -352,7 +349,7 @@ raw %>%
     `summarise()` has grouped output by 'ADDR-RANK', 'TERM', 'RESP-GENDER'. You can
     override using the `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
 # Compare all ATs based on interlocutors' gender
@@ -377,7 +374,7 @@ raw %>%
     `summarise()` has grouped output by 'ADDR-RANK', 'TERM', 'RESP-GENDER'. You can
     override using the `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-4-2.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-5-2.png)<!-- -->
 
 ``` r
 # compare dude/bro/bruh/girl만.
@@ -403,7 +400,7 @@ raw %>%
     `summarise()` has grouped output by 'ADDR-RANK', 'TERM', 'RESP-GENDER'. You can
     override using the `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-4-3.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-5-3.png)<!-- -->
 
 ``` r
 # Compare dude/bro based on interlocutors' gender
@@ -428,10 +425,10 @@ raw %>%
     `summarise()` has grouped output by 'ADDR-RANK', 'TERM', 'RESP-GENDER'. You can
     override using the `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-4-4.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-5-4.png)<!-- -->
 
 ``` r
-# 담화자 젠더별 mean freq
+# mean freq by respondents` gender
 
 raw %>% 
   na.omit(FREQUENCY) %>% 
@@ -449,7 +446,7 @@ raw %>%
     `summarise()` has grouped output by 'ADDR-RANK', 'TERM', 'RESP-GENDER'. You can
     override using the `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-4-5.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-5-5.png)<!-- -->
 
 ``` r
 raw %>% 
@@ -470,14 +467,28 @@ raw %>%
     7 Supervisor        0.325
 
 ``` r
-unique(raw$`ADDR-RANK`)
+raw
 ```
 
-    [1] "Parent"       "Sibling"      "Partner"      "Acquaintance" "Supervisor"  
-    [6] "Friend"       "Stranger"    
+    # A tibble: 22,344 × 8
+       `ADDR-GENDER` `ADDR-RANK` TERM  FREQUENCY `RESP-GENDER` AGE   RESP-…¹ AT-US…²
+       <chr>         <chr>       <chr>     <dbl> <chr>         <chr> <chr>   <chr>  
+     1 Feminine      Parent      BRO           2 Feminine      18-25 R_3PzQ… bro    
+     2 Feminine      Parent      BRO           0 Masculine     18-25 R_33ki… bro    
+     3 Feminine      Parent      BRO           4 Feminine      18-25 R_XjNC… bro,br…
+     4 Feminine      Parent      BRO           2 Feminine      18-25 R_3Mfm… bro,br…
+     5 Feminine      Parent      BRO           1 Feminine      18-25 R_1rpO… bro,br…
+     6 Feminine      Parent      BRO           1 Masculine     18-25 R_2799… bro,br…
+     7 Feminine      Parent      BRO           2 Feminine      18-25 R_1gFn… bro,br…
+     8 Feminine      Parent      BRO           0 Masculine     18-25 R_1LGo… bro,br…
+     9 Feminine      Parent      BRO           0 Feminine      18-25 R_3EHg… bro,br…
+    10 Feminine      Parent      BRO          NA Feminine      18-25 R_1pRk… bro,br…
+    # … with 22,334 more rows, and abbreviated variable names ¹​`RESP-ID`,
+    #   ²​`AT-USE-GENERAL`
 
 ``` r
-# 네 개 라인 한번에
+# Four lines at once
+
 raw %>% 
   na.omit(FREQUENCY) %>% 
   select(-`AT-USE-GENERAL`) %>% 
@@ -496,7 +507,7 @@ raw %>%
     `summarise()` has grouped output by 'ADDR-RANK', 'RESP-GENDER'. You can
     override using the `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ``` r
 raw %>% 
@@ -517,7 +528,7 @@ raw %>%
     `summarise()` has grouped output by 'ADDR-RANK', 'RESP-GENDER'. You can
     override using the `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-5-2.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
 
 ``` r
 #########################################################################
@@ -539,7 +550,7 @@ raw %>%
     `summarise()` has grouped output by 'ADDR-RANK'. You can override using the
     `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-5-3.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-6-3.png)<!-- -->
 
 ``` r
 raw %>% 
@@ -551,13 +562,14 @@ raw %>%
   summarize(mean_freq = mean(FREQUENCY)) %>% 
   ggplot(aes(x = `ADDR-RANK`, y = mean_freq,  group = `RESP-GENDER`, col = `RESP-GENDER`)) +
   geom_line() +
-  geom_point()
+  geom_point() +
+  labs(title = "BRO")
 ```
 
     `summarise()` has grouped output by 'ADDR-RANK'. You can override using the
     `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-5-4.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-6-4.png)<!-- -->
 
 # Compare only ‘dude’. (all relationship)
 
@@ -584,7 +596,7 @@ raw %>%
     `summarise()` has grouped output by 'ADDR-RANK', 'TERM', 'RESP-GENDER'. You can
     override using the `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 ``` r
 raw %>% 
@@ -602,7 +614,7 @@ raw %>%
     `summarise()` has grouped output by 'RESP-GENDER'. You can override using the
     `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ## Non-hetero’s usage of dude/bro
 
@@ -678,61 +690,47 @@ raw %>%
     # … with 1,362 more rows
 
 ``` r
-raw %>% 
+# dude/bro의 사용여부 - incorporating sexuality information
+
+semi_clean <- raw %>% 
   select(`RESP-ID`, `AT-USE-GENERAL`) %>%
   mutate(dude = grepl("dude", `AT-USE-GENERAL`),
           bro = grepl("bro",  `AT-USE-GENERAL`)) %>% 
   left_join(., sexual, by = "RESP-ID") %>% 
-  filter(SEXRECODE %in% c("Asexual", "Bi", "Gay", "Lesbian", "Pan", "Queer", "Other")) %>% 
-  group_by(SEXRECODE) %>% 
-  summarize(num = length(SEXRECODE))
+  filter(SEXRECODE %in% c("Asexual", "Bi", "Gay", "Lesbian", "Pan", "Queer", "Other"))
 ```
 
-    # A tibble: 7 × 2
-      SEXRECODE   num
-      <chr>     <int>
-    1 Asexual     196
-    2 Bi         4508
-    3 Gay        1470
-    4 Lesbian     784
-    5 Other       490
-    6 Pan         882
-    7 Queer      1078
-
 ``` r
+# dude 사용 여부 - boolean
 dude <- raw %>% 
   filter(`ADDR-RANK` == "Parent", TERM == "BRO", `ADDR-GENDER` == "Feminine") %>% 
   select(`RESP-ID`, `AT-USE-GENERAL`) %>%
-  mutate(AT = grepl("dude", `AT-USE-GENERAL`)) %>% 
+  mutate(AT_dude = grepl("dude", `AT-USE-GENERAL`)) %>% 
   left_join(., sexual, by = "RESP-ID")
 
+# bro 사용여부 - boolean
 bro <- raw %>% 
   filter(`ADDR-RANK` == "Parent", TERM == "BRO", `ADDR-GENDER` == "Feminine") %>% 
   select(`RESP-ID`, `AT-USE-GENERAL`) %>%
-  mutate(AT = grepl("bro", `AT-USE-GENERAL`)) %>% 
+  mutate(AT_bro = grepl("bro", `AT-USE-GENERAL`)) %>% 
   left_join(., sexual, by = "RESP-ID")
 
 
 brodude <- dude %>% 
-  select(AT, `RESP-ID`) %>% 
-  mutate(AT_dude = AT) %>% 
-  left_join(., bro %>%   mutate(AT_bro = AT), by = "RESP-ID") %>% 
-  select(-AT.x, -AT.y) %>% 
+  select(AT_dude, `RESP-ID`) %>% 
+  left_join(., bro, by = "RESP-ID") %>% 
   relocate(AT_dude, .before = "AT_bro")
+```
 
+``` r
 # dude/bro usage based on sexuality
 
-dude_use <- brodude %>% 
+brodude_clean <- brodude %>% 
+  na.omit(SEXRECODE) %>% 
   map(~ str_replace_all(., "(Asexual|Bi|Gay|Lesbian|Pan|Queer|Other)", "non_Het")) %>% 
   as_data_frame() %>% 
-  na.omit(SEXRECODE) %>% 
   mutate_all(funs(str_replace(., "FALSE", "NO USE"))) %>% 
-  mutate_all(funs(str_replace(., "TRUE", "USE"))) %>% 
-  group_by(SEXRECODE, AT_dude) %>% 
-  summarize(Count = n()) %>%
-  ggplot(aes(x = SEXRECODE, y = Count, fill = AT_dude)) + 
-  geom_col(position = "dodge") + 
-  labs(title = "dude usage based on sexuality", x = "Sexuality")
+  mutate_all(funs(str_replace(., "TRUE", "USE")))
 ```
 
     Warning: `funs()` was deprecated in dplyr 0.8.0.
@@ -749,16 +747,43 @@ dude_use <- brodude %>%
     This warning is displayed once every 8 hours.
     Call `lifecycle::last_lifecycle_warnings()` to see where this warning was generated.
 
+``` r
+# check if ready
+brodude_clean %>% 
+  group_by(SEXRECODE, AT_dude, AT_bro) %>% 
+  summarize(n = n())
+```
+
+    `summarise()` has grouped output by 'SEXRECODE', 'AT_dude'. You can override
+    using the `.groups` argument.
+
+    # A tibble: 8 × 4
+    # Groups:   SEXRECODE, AT_dude [4]
+      SEXRECODE AT_dude AT_bro     n
+      <chr>     <chr>   <chr>  <int>
+    1 Het       NO USE  NO USE     9
+    2 Het       NO USE  USE       11
+    3 Het       USE     NO USE    15
+    4 Het       USE     USE       63
+    5 non_Het   NO USE  NO USE    10
+    6 non_Het   NO USE  USE        4
+    7 non_Het   USE     NO USE     9
+    8 non_Het   USE     USE       71
+
+``` r
+dude_use <- brodude_clean %>% 
+  group_by(SEXRECODE, AT_dude) %>% 
+  summarize(Count = n()) %>%
+  ggplot(aes(x = SEXRECODE, y = Count, fill = AT_dude)) + 
+  geom_col(position = "dodge") + 
+  labs(title = "dude usage based on sexuality", x = "Sexuality")
+```
+
     `summarise()` has grouped output by 'SEXRECODE'. You can override using the
     `.groups` argument.
 
 ``` r
-bro_use <- brodude %>% 
-  map(~ str_replace_all(., "(Asexual|Bi|Gay|Lesbian|Pan|Queer|Other)", "non_Het")) %>% 
-  as_data_frame() %>% 
-  na.omit(SEXRECODE) %>% 
-  mutate_all(funs(str_replace(., "FALSE", "NO USE"))) %>% 
-  mutate_all(funs(str_replace(., "TRUE", "USE"))) %>% 
+bro_use <- brodude_clean %>% 
   group_by(SEXRECODE, AT_bro) %>% 
   summarize(Count = n()) %>%
   ggplot(aes(x = SEXRECODE, y = Count, fill = AT_bro)) + 
@@ -774,34 +799,15 @@ bro_use <- brodude %>%
 dude_use
 ```
 
-![](final_project_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
 
 ``` r
 bro_use
 ```
 
-![](final_project_files/figure-gfm/unnamed-chunk-10-2.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-14-2.png)<!-- -->
 
 # Sexuality dude/bro
-
-``` r
-sexual
-```
-
-    # A tibble: 228 × 2
-       SEXRECODE `RESP-ID`        
-       <chr>     <chr>            
-     1 Het       R_33kiGGca4LUT1CY
-     2 Het       R_3PzQdcTJzYbZXKv
-     3 Other     R_1LGoOEmO4vEWEFM
-     4 <NA>      R_10pBzbfQuNcvT4m
-     5 Pan       R_XjNCWoHHPn6Vgu5
-     6 Het       R_1gFnojyf6wsLeNv
-     7 Het       R_1rpOK7Kq0W3PGPI
-     8 Het       R_27990m3pU4KhkgU
-     9 Het       R_3MfmOPcGaPLV1zP
-    10 Pan       R_1pRksLPihqfNrsj
-    # … with 218 more rows
 
 ``` r
 raw %>% 
@@ -825,7 +831,7 @@ raw %>%
     `summarise()` has grouped output by 'ADDR-RANK'. You can override using the
     `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 # 응답자 젠더에 따른 dude/bro사용 그래프
 
@@ -878,7 +884,7 @@ raw %>%
     `summarise()` has grouped output by 'RESP-GENDER'. You can override using the
     `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
 ``` r
 # 응답자의 젠더에 따른 bro 사용 (그래프)
@@ -901,7 +907,7 @@ raw %>%
     `summarise()` has grouped output by 'RESP-GENDER'. You can override using the
     `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-12-2.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-16-2.png)<!-- -->
 
 ``` r
 # 각 젠더별 응답자 수
@@ -978,7 +984,7 @@ raw_sexual %>%
     `summarise()` has grouped output by 'ADDR-RANK', 'TERM'. You can override using
     the `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-17-1.png)<!-- -->
 
 ``` r
 # 성지향성에 따른 dude/bro 사용현황
@@ -1002,7 +1008,7 @@ raw_sexual %>%
     `summarise()` has grouped output by 'ADDR-RANK', 'TERM'. You can override using
     the `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-17-2.png)<!-- -->
 
 ``` r
 # non-hetero들의 girl 사용현황
@@ -1032,7 +1038,7 @@ raw_sexual %>%
     `summarise()` has grouped output by 'ADDR-RANK', 'ADDR-GENDER', 'RESP-GENDER'.
     You can override using the `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-13-3.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-17-3.png)<!-- -->
 
 # Non-hetero’s other AT usage 현황
 
@@ -1058,7 +1064,7 @@ raw_sexual %>%
     `summarise()` has grouped output by 'ADDR-RANK', 'TERM'. You can override using
     the `.groups` argument.
 
-![](final_project_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
 ``` r
 raw_sexual %>% 
@@ -1312,7 +1318,7 @@ bro_sent_clean %>%
   labs(title = "Top 20 tokens used to describe 'bro'", x = "Count")
 ```
 
-![](final_project_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-20-1.png)<!-- -->
 
 ``` r
 bruh_sent_clean %>%
@@ -1326,7 +1332,7 @@ bruh_sent_clean %>%
   labs(title = "Top 20 tokens used to describe 'bruh'", x = "Count")
 ```
 
-![](final_project_files/figure-gfm/unnamed-chunk-16-2.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-20-2.png)<!-- -->
 
 ``` r
 # 응답자 젠더별 plot
@@ -1342,7 +1348,7 @@ bro_sent_clean %>%
   labs(title = "Tokens used to describe 'bro'")
 ```
 
-![](final_project_files/figure-gfm/unnamed-chunk-16-3.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-20-3.png)<!-- -->
 
 ``` r
 bruh_sent_clean %>%
@@ -1356,7 +1362,7 @@ bruh_sent_clean %>%
   labs(title = "Tokens used to describe 'bruh'")
 ```
 
-![](final_project_files/figure-gfm/unnamed-chunk-16-4.png)<!-- -->
+![](final_project_files/figure-gfm/unnamed-chunk-20-4.png)<!-- -->
 
 # Others
 
