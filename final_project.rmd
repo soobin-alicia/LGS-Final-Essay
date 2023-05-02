@@ -458,7 +458,7 @@ dude_use
 bro_use
 ```
 
-# Sexuality dude/bro
+# bro/dud usage by sexuality
 
 ```{r}
 
